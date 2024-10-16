@@ -1,5 +1,8 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vibrate Controller</title>
     <style>
         body {
@@ -38,6 +41,10 @@
             display: flex;
             justify-content: center;
         }
+        input[type="range"] {
+            width: 300px;
+            margin: 20px 0;
+        }
     </style>
 </head>
 <body>
@@ -46,22 +53,13 @@
 
     <button id="vibrate-btn" disabled>Test</button><br>
 
-    <div class="button-row">
-        <button class="continuous-vibrate-btn" data-magnitude="0.3" disabled>Continuous (0.3)</button>
-        <button class="continuous-vibrate-btn" data-magnitude="0.7" disabled>Continuous (0.7)</button>
-        <button class="continuous-vibrate-btn" data-magnitude="1.0" disabled>Continuous (1.0)</button>
-    </div>
-    
-    <div class="button-row">
-        <button class="small-pause-btn" data-magnitude="0.3" disabled>Small Pause (0.3)</button>
-        <button class="small-pause-btn" data-magnitude="0.7" disabled>Small Pause (0.7)</button>
-        <button class="small-pause-btn" data-magnitude="1.0" disabled>Small Pause (1.0)</button>
-    </div>
+    <input type="range" id="magnitude-slider" min="0.1" max="1.0" step="0.1" value="0.3">
+    <label for="magnitude-slider">Magnitude</label><br>
 
     <div class="button-row">
-        <button class="big-pause-btn" data-magnitude="0.3" disabled>Big Pause (0.3)</button>
-        <button class="big-pause-btn" data-magnitude="0.7" disabled>Big Pause (0.7)</button>
-        <button class="big-pause-btn" data-magnitude="1.0" disabled>Big Pause (1.0)</button>
+        <button class="continuous-vibrate-btn" disabled>Continuous</button>
+        <button class="small-pause-btn" data-pause="250" disabled>Small Pause</button>
+        <button class="big-pause-btn" data-pause="500" disabled>Big Pause</button>
     </div>
 
     <button id="custom-vibrations-btn" disabled>Custom Vibrations</button><br>
@@ -107,12 +105,12 @@
         const vibrateOnce = async (weakMagnitude, strongMagnitude) => {
             const gamepads = navigator.getGamepads();
             if (gamepads[0] && gamepads[0].vibrationActuator) {
-                    await gamepads[0].vibrationActuator.playEffect("dual-rumble", {
-                        startDelay: 0,
-                        duration: 1000,
-                        weakMagnitude: weakMagnitude,
-                        strongMagnitude: strongMagnitude,
-                    });
+                await gamepads[0].vibrationActuator.playEffect("dual-rumble", {
+                    startDelay: 0,
+                    duration: 1000,
+                    weakMagnitude: weakMagnitude,
+                    strongMagnitude: strongMagnitude,
+                });
             } else {
                 updateStatus("No gamepad found or vibration is not supported.");
             }
@@ -174,6 +172,13 @@
             handleVibration(1.0, 0, document.getElementById('custom-vibrations-btn'));
         };
 
+        const slider = document.getElementById('magnitude-slider');
+
+        slider.addEventListener('input', () => {
+            const magnitude = parseFloat(slider.value);
+            handleVibration(magnitude, 0, slider);
+        });
+
         document.getElementById('vibrate-btn').addEventListener('click', () => {
             handleVibrationOnce(1.0, document.getElementById('vibrate-btn'));
         });
@@ -184,22 +189,24 @@
 
         document.querySelectorAll('.continuous-vibrate-btn').forEach(button => {
             button.addEventListener('click', () => {
-                const magnitude = button.getAttribute('data-magnitude');
+                const magnitude = parseFloat(slider.value);
                 handleVibration(magnitude, 0, button);
             });
         });
 
         document.querySelectorAll('.small-pause-btn').forEach(button => {
             button.addEventListener('click', () => {
-                const magnitude = button.getAttribute('data-magnitude');
-                handleVibration(magnitude, 250, button);
+                const pause = button.getAttribute('data-pause');
+                const magnitude = parseFloat(slider.value);
+                handleVibration(magnitude, pause, button);
             });
         });
 
         document.querySelectorAll('.big-pause-btn').forEach(button => {
             button.addEventListener('click', () => {
-                const magnitude = button.getAttribute('data-magnitude');
-                handleVibration(magnitude, 500, button);
+                const pause = button.getAttribute('data-pause');
+                const magnitude = parseFloat(slider.value);
+                handleVibration(magnitude, pause, button);
             });
         });
     </script>
