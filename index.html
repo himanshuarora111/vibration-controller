@@ -197,35 +197,35 @@
             }
         }, 700)); // Adjust the debounce delay as needed
 
-        document.getElementById('vibrate-btn').addEventListener('click', () => {
+        document.getElementById('vibrate-btn').addEventListener('click', debounce(() => {
             handleVibrationOnce(1.0, document.getElementById('vibrate-btn'));
-        });
+        }, 700));
 
         document.getElementById('stop-btn').addEventListener('click', stopVibration);
 
         document.getElementById('custom-vibrations-btn').addEventListener('click', runCustomVibrations);
 
         document.querySelectorAll('.continuous-vibrate-btn').forEach(button => {
-            button.addEventListener('click', () => {
+            button.addEventListener('click', debounce(() => {
                 const magnitude = parseFloat(slider.value);
                 handleVibration(magnitude, 0, button);
-            });
+            }, 700));
         });
 
         document.querySelectorAll('.small-pause-btn').forEach(button => {
-            button.addEventListener('click', () => {
+            button.addEventListener('click', debounce(() => {
                 const pause = button.getAttribute('data-pause');
                 const magnitude = parseFloat(slider.value);
                 handleVibration(magnitude, pause, button);
-            });
+            }, 700));
         });
 
         document.querySelectorAll('.big-pause-btn').forEach(button => {
-            button.addEventListener('click', () => {
+            button.addEventListener('click', debounce(() => {
                 const pause = button.getAttribute('data-pause');
                 const magnitude = parseFloat(slider.value);
                 handleVibration(magnitude, pause, button);
-            });
+            }, 700));
         });
     </script>
 </body>
