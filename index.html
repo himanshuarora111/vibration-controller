@@ -175,8 +175,12 @@
         const slider = document.getElementById('magnitude-slider');
 
         slider.addEventListener('input', () => {
-            const magnitude = parseFloat(slider.value);
-            handleVibration(magnitude, 0, slider);
+            const activeButton = document.querySelector('button.active');
+            if (activeButton) {
+                const magnitude = parseFloat(slider.value);
+                const pause = activeButton.dataset.pause ? parseInt(activeButton.dataset.pause) : 0; // Use 0 if no pause is defined
+                handleVibration(magnitude, pause, activeButton);
+            }
         });
 
         document.getElementById('vibrate-btn').addEventListener('click', () => {
