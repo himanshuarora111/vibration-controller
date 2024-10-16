@@ -157,20 +157,28 @@
 
         const runCustomVibrations = async () => {
             stopVibration();
+            document.getElementById('custom-vibrations-btn').classList.add('active');
 
-            handleVibration(0.3, 250, document.getElementById('custom-vibrations-btn'));
-            await new Promise(resolve => setTimeout(resolve, 10000));
-
-            stopVibration();
-            handleVibration(0.7, 250, document.getElementById('custom-vibrations-btn'));
-            await new Promise(resolve => setTimeout(resolve, 20000));
-
-            stopVibration();
-            handleVibration(0.7, 0, document.getElementById('custom-vibrations-btn'));
-            await new Promise(resolve => setTimeout(resolve, 30000));
-
-            stopVibration();
-            handleVibration(1.0, 0, document.getElementById('custom-vibrations-btn'));
+            const durations = 15000; // fixed duration
+            pauseDuration = 0;
+            isVibrating = true;
+            setTimeout( async () => {
+                vibrate(0.1, 0.1);
+                updateStatus(`Vibrating with ${pauseDuration === 0 ? 'Continuous' : pauseDuration + 'ms pauseDuration'} at 0.1`);
+                await new Promise(resolve => setTimeout(resolve, durations));
+                stopVibration();
+                isVibrating = true;
+                document.getElementById('custom-vibrations-btn').classList.add('active');
+                vibrate(0.5, 0.5);
+                updateStatus(`Vibrating with ${pauseDuration === 0 ? 'Continuous' : pauseDuration + 'ms pauseDuration'} at 0.5`);
+                await new Promise(resolve => setTimeout(resolve, durations));
+                stopVibration();
+                isVibrating = true;
+                document.getElementById('custom-vibrations-btn').classList.add('active');
+                vibrate(1.0, 1.0);
+                updateStatus(`Vibrating with ${pauseDuration === 0 ? 'Continuous' : pauseDuration + 'ms pauseDuration'} at 1.0`);
+                await new Promise(resolve => setTimeout(resolve, durations));
+            }, 700);
         };
 
         const debounce = (func, delay) => {
