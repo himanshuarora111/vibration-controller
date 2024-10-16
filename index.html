@@ -44,7 +44,7 @@
     <h1>Vibrate Controller</h1>
     <div id="status">Press a button on Controller to connect.</div>
 
-    <button id="vibrate-btn" disabled>Vibrate</button><br>
+    <button id="vibrate-btn" disabled>Test</button><br>
 
     <div class="button-row">
         <button class="continuous-vibrate-btn" data-magnitude="0.3" disabled>Continuous (0.3)</button>
@@ -104,6 +104,20 @@
             }
         };
 
+        const vibrateOnce = async (weakMagnitude, strongMagnitude) => {
+            const gamepads = navigator.getGamepads();
+            if (gamepads[0] && gamepads[0].vibrationActuator) {
+                    await gamepads[0].vibrationActuator.playEffect("dual-rumble", {
+                        startDelay: 0,
+                        duration: 1000,
+                        weakMagnitude: weakMagnitude,
+                        strongMagnitude: strongMagnitude,
+                    });
+            } else {
+                updateStatus("No gamepad found or vibration is not supported.");
+            }
+        };
+
         const enableButtons = () => {
             document.querySelectorAll('button').forEach(button => button.disabled = false);
             updateStatus("Gamepad connected. Buttons enabled.");
@@ -132,6 +146,16 @@
             }, 300);
         };
 
+        const handleVibrationOnce = (magnitude, pause, button) => {
+            stopVibration();
+            document.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+
+            setTimeout(() => {
+                vibrateOnce(magnitude, magnitude);
+                updateStatus(`Testing Vibration Once`);
+            }, 300);
+        };
+
         const runCustomVibrations = async () => {
             stopVibration();
 
@@ -151,7 +175,7 @@
         };
 
         document.getElementById('vibrate-btn').addEventListener('click', () => {
-            handleVibration(0.7, 500, document.getElementById('vibrate-btn'));
+            handleVibrationOnce(1.0, document.getElementById('vibrate-btn'));
         });
 
         document.getElementById('stop-btn').addEventListener('click', stopVibration);
