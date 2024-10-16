@@ -142,7 +142,7 @@
                 isVibrating = true;
                 vibrate(magnitude, magnitude);
                 updateStatus(`Vibrating with ${pause === 0 ? 'continuous' : pause + 'ms pause'} at ${magnitude}.`);
-            }, 300);
+            }, 700);
         };
 
         const handleVibrationOnce = (magnitude, pause, button) => {
@@ -152,7 +152,7 @@
             setTimeout(() => {
                 vibrateOnce(magnitude, magnitude);
                 updateStatus(`Testing Vibration Once`);
-            }, 300);
+            }, 700);
         };
 
         const runCustomVibrations = async () => {
@@ -173,10 +173,20 @@
             handleVibration(1.0, 0, document.getElementById('custom-vibrations-btn'));
         };
 
+        const debounce = (func, delay) => {
+            let timeoutId;
+            return (...args) => {
+                if (timeoutId) clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => {
+                    func(...args);
+                }, delay);
+            };
+        };
+
         const slider = document.getElementById('magnitude-slider');
         const magnitudeValue = document.getElementById('magnitude-value');
 
-        slider.addEventListener('input', () => {
+        slider.addEventListener('input', debounce(() => {
             const activeButton = document.querySelector('button.active');
             const magnitude = parseFloat(slider.value);
             magnitudeValue.innerText = magnitude; // Update displayed value
@@ -185,7 +195,7 @@
                 const pause = activeButton.dataset.pause ? parseInt(activeButton.dataset.pause) : 0; // Use 0 if no pause is defined
                 handleVibration(magnitude, pause, activeButton);
             }
-        });
+        }, 700)); // Adjust the debounce delay as needed
 
         document.getElementById('vibrate-btn').addEventListener('click', () => {
             handleVibrationOnce(1.0, document.getElementById('vibrate-btn'));
