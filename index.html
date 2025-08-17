@@ -45,11 +45,24 @@
             width: 300px;
             margin: 20px 0;
         }
+        select {
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            background-color: #333;
+            color: white;
+            border: 1px solid #555;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
     <h1>Vibrate Controller</h1>
     <div id="status">Press a button on Controller to connect.</div>
+    
+    <select id="gamepad-select" disabled>
+        <option value="">No gamepads connected</option>
+    </select><br>
 
     <button id="vibrate-btn" disabled>Test</button><br>
 
@@ -69,26 +82,65 @@
     <script>
         let isVibrating = false;
         let pauseDuration = 500;
+        let selectedGamepadIndex = null;
+        let gamepads = [];
 
         const updateStatus = (message) => {
             document.getElementById('status').innerText = message;
         };
 
+        const updateGamepadList = () => {
+            const select = document.getElementById('gamepad-select');
+            select.innerHTML = '';
+            
+            gamepads = navigator.getGamepads().filter(g => g !== null);
+            
+            if (gamepads.length === 0) {
+                select.disabled = true;
+                select.innerHTML = '<option value="">No gamepads connected</option>';
+                disableAllButtons();
+                updateStatus("Press a button on Controller to connect.");
+                return;
+            }
+            
+            select.disabled = false;
+            gamepads.forEach((gamepad, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.text = `${index}: ${gamepad.id}`;
+                select.appendChild(option);
+            });
+            
+            // If no gamepad is selected yet or the selected one is disconnected, select the first one
+            if (selectedGamepadIndex === null || !gamepads[selectedGamepadIndex]) {
+                selectedGamepadIndex = 0;
+                select.value = 0;
+            }
+            
+            updateStatus(`Gamepad ${selectedGamepadIndex} selected. Buttons enabled.`);
+            enableButtons();
+        };
+
+        const getSelectedGamepad = () => {
+            if (selectedGamepadIndex === null) return null;
+            return gamepads[selectedGamepadIndex];
+        };
+
         const stopVibration = () => {
             isVibrating = false;
-            const gamepads = navigator.getGamepads();
-            if (gamepads[0] && gamepads[0].vibrationActuator) {
-                gamepads[0].vibrationActuator.reset();
+            const gamepad = getSelectedGamepad();
+            if (gamepad && gamepad.vibrationActuator) {
+                gamepad.vibrationActuator.reset();
             }
-            updateStatus("Vibration stopped.");
+            updateStatus(`Vibration stopped on gamepad ${selectedGamepadIndex}.`);
             document.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
         };
 
         const vibrate = async (weakMagnitude, strongMagnitude) => {
-            const gamepads = navigator.getGamepads();
-            if (gamepads[0] && gamepads[0].vibrationActuator) {
+            const gamepad = getSelectedGamepad();
+            if (gamepad && gamepad.vibrationActuator) {
                 while (isVibrating) {
-                    await gamepads[0].vibrationActuator.playEffect("dual-rumble", {
+                    await gamepad.vibrationActuator.playEffect("dual-rumble", {
                         startDelay: 0,
                         duration: 1000,
                         weakMagnitude: weakMagnitude,
@@ -99,38 +151,39 @@
                     }
                 }
             } else {
-                updateStatus("No gamepad found or vibration is not supported.");
+                updateStatus(`No gamepad ${selectedGamepadIndex} found or vibration is not supported.`);
             }
         };
 
         const vibrateOnce = async (weakMagnitude, strongMagnitude) => {
-            const gamepads = navigator.getGamepads();
-            if (gamepads[0] && gamepads[0].vibrationActuator) {
-                await gamepads[0].vibrationActuator.playEffect("dual-rumble", {
+            const gamepad = getSelectedGamepad();
+            if (gamepad && gamepad.vibrationActuator) {
+                await gamepad.vibrationActuator.playEffect("dual-rumble", {
                     startDelay: 0,
                     duration: 1000,
                     weakMagnitude: weakMagnitude,
                     strongMagnitude: strongMagnitude,
                 });
             } else {
-                updateStatus("No gamepad found or vibration is not supported.");
+                updateStatus(`No gamepad ${selectedGamepadIndex} found or vibration is not supported.`);
             }
         };
 
         const enableButtons = () => {
-            document.querySelectorAll('button').forEach(button => button.disabled = false);
-            updateStatus("Gamepad connected. Buttons enabled.");
+            document.querySelectorAll('button:not(#gamepad-select)').forEach(button => {
+                button.disabled = false;
+            });
+        };
+
+        const disableAllButtons = () => {
+            document.querySelectorAll('button:not(#gamepad-select)').forEach(button => {
+                button.disabled = true;
+            });
         };
 
         const checkGamepadConnection = () => {
-            const gamepads = navigator.getGamepads();
-            if (gamepads[0] && gamepads[0].vibrationActuator) {
-                enableButtons();
-                clearInterval(gamepadCheckInterval);
-            }
+            updateGamepadList();
         };
-
-        const gamepadCheckInterval = setInterval(checkGamepadConnection, 1000);
 
         const handleVibration = (magnitude, pause, button) => {
             stopVibration();
@@ -141,7 +194,7 @@
                 pauseDuration = pause;
                 isVibrating = true;
                 vibrate(magnitude, magnitude);
-                updateStatus(`Vibrating with ${pause === 0 ? 'continuous' : pause + 'ms pause'} at ${magnitude}.`);
+                updateStatus(`Vibrating gamepad ${selectedGamepadIndex} with ${pause === 0 ? 'continuous' : pause + 'ms pause'} at ${magnitude}.`);
             }, 700);
         };
 
@@ -151,7 +204,7 @@
 
             setTimeout(() => {
                 vibrateOnce(magnitude, magnitude);
-                updateStatus(`Testing Vibration Once`);
+                updateStatus(`Testing Vibration Once on gamepad ${selectedGamepadIndex}`);
             }, 700);
         };
 
@@ -164,19 +217,19 @@
             isVibrating = true;
             setTimeout( async () => {
                 vibrate(0.1, 0.1);
-                updateStatus(`Vibrating with ${pauseDuration === 0 ? 'Continuous' : pauseDuration + 'ms pauseDuration'} at 0.1`);
+                updateStatus(`Vibrating gamepad ${selectedGamepadIndex} with ${pauseDuration === 0 ? 'Continuous' : pauseDuration + 'ms pauseDuration'} at 0.1`);
                 await new Promise(resolve => setTimeout(resolve, durations));
                 stopVibration();
                 isVibrating = true;
                 document.getElementById('custom-vibrations-btn').classList.add('active');
                 vibrate(0.5, 0.5);
-                updateStatus(`Vibrating with ${pauseDuration === 0 ? 'Continuous' : pauseDuration + 'ms pauseDuration'} at 0.5`);
+                updateStatus(`Vibrating gamepad ${selectedGamepadIndex} with ${pauseDuration === 0 ? 'Continuous' : pauseDuration + 'ms pauseDuration'} at 0.5`);
                 await new Promise(resolve => setTimeout(resolve, durations));
                 stopVibration();
                 isVibrating = true;
                 document.getElementById('custom-vibrations-btn').classList.add('active');
                 vibrate(1.0, 1.0);
-                updateStatus(`Vibrating with ${pauseDuration === 0 ? 'Continuous' : pauseDuration + 'ms pauseDuration'} at 1.0`);
+                updateStatus(`Vibrating gamepad ${selectedGamepadIndex} with ${pauseDuration === 0 ? 'Continuous' : pauseDuration + 'ms pauseDuration'} at 1.0`);
                 await new Promise(resolve => setTimeout(resolve, durations));
             }, 700);
         };
@@ -191,19 +244,25 @@
             };
         };
 
+        // Event listeners
+        document.getElementById('gamepad-select').addEventListener('change', (e) => {
+            selectedGamepadIndex = parseInt(e.target.value);
+            updateStatus(`Gamepad ${selectedGamepadIndex} selected.`);
+        });
+
         const slider = document.getElementById('magnitude-slider');
         const magnitudeValue = document.getElementById('magnitude-value');
 
         slider.addEventListener('input', debounce(() => {
             const activeButton = document.querySelector('button.active');
             const magnitude = parseFloat(slider.value);
-            magnitudeValue.innerText = magnitude; // Update displayed value
+            magnitudeValue.innerText = magnitude;
 
             if (activeButton) {
-                const pause = activeButton.dataset.pause ? parseInt(activeButton.dataset.pause) : 0; // Use 0 if no pause is defined
+                const pause = activeButton.dataset.pause ? parseInt(activeButton.dataset.pause) : 0;
                 handleVibration(magnitude, pause, activeButton);
             }
-        }, 700)); // Adjust the debounce delay as needed
+        }, 700));
 
         document.getElementById('vibrate-btn').addEventListener('click', debounce(() => {
             handleVibrationOnce(1.0, document.getElementById('vibrate-btn'));
@@ -234,6 +293,21 @@
                 const magnitude = parseFloat(slider.value);
                 handleVibration(magnitude, pause, button);
             }, 700));
+        });
+
+        // Initialize and set up polling
+        const gamepadCheckInterval = setInterval(checkGamepadConnection, 1000);
+        const gyroUpdateInterval = setInterval(updateGyroData, 100);
+        
+        // Also listen for gamepad connection events
+        window.addEventListener("gamepadconnected", (e) => {
+            updateGamepadList();
+            updateStatus(`Gamepad ${e.gamepad.index} connected: ${e.gamepad.id}`);
+        });
+
+        window.addEventListener("gamepaddisconnected", (e) => {
+            updateGamepadList();
+            updateStatus(`Gamepad ${e.gamepad.index} disconnected`);
         });
     </script>
 </body>
